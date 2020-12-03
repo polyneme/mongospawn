@@ -3,7 +3,7 @@ specifications.
 
 The primary near-term use case is support for the [National Microbiome Data
 Collaborative (NMDC)](https://microbiomedata.org/) pilot project. In particular,
-given a JSON Schema with all array-types properties and with each array item a
+given a JSON Schema with all array-typed properties and with each array item a
 `$ref` reference to one of the JSON Schema `definitions` (see [NMDC
 example](https://github.com/microbiomedata/nmdc-metadata/blob/d93d5f33b41d55a270dd014c8c27b18a6e804375/schema/nmdc.schema.json)),
 `mongospawn` can generate MongoDB `$jsonSchema` documents to apply as validators
