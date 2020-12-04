@@ -16,13 +16,52 @@ In addition to generating derived schema documents, `mongospawn` can spawn new
 databases/collections, with schema validation set, via the `pymongo` driver, and
 can also manage access to the spawned resources via `mongogrant`.
 
-## Development
+## Setup
+For development:
 ```
 pip install -e .[dev]
 ```
 
-### Testing
-Use pinned dependencies:
+To update dependency versions:
+```
+make update
+```
+
+To use pinned dependencies for reproducible testing:
 ```
 make
 ```
+
+# Usage
+
+Example using [NMDC's JSON
+Schema](https://github.com/microbiomedata/nmdc-metadata/blob/d93d5f33b41d55a270dd014c8c27b18a6e804375/schema/nmdc.schema.json):
+
+```python
+from mongospawn.schema import dbschema_from_file, collschemas_for
+from pymongo import MongoClient
+
+client = MongoClient()
+db = client.nmdc_test
+
+dbschema = dbschema_from_file("nmdc.schema.json")
+collschemas = collschemas_for(dbschema)
+for name in collschemas:
+    db.drop_collection(name)
+    db.create_collection(name, validator={"$jsonSchema": collschemas[name]})
+    print(f"created {name} collection")
+# created activity_set collection
+# created biosample_set collection
+# created data_object_set collection
+# created omics_processing_set collection
+# created study_set collection
+```
+
+Now, e.g. if you try to insert a non-conformant JSON document, a
+`pymongo.errors.WriteError` will be raised:
+```python
+db.biosample_set.insert_one({"not_a_real_field": 1})
+# => WriteError: Document failed validation...
+```
+
+
