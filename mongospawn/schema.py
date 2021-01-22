@@ -40,7 +40,10 @@ def collschemas_for(dbschema: DBSchema) -> Dict[str, CollSchema]:
     for coll_name, coll_spec in collections.items():
         coll_itemref = coll_spec["items"]["$ref"].split("#/definitions/")[-1]
         objschema = dbschema["definitions"][coll_itemref]
-        collschemas[coll_name] = make_compatible(objschema, dbschema)
+        objschema_new = make_compatible(objschema, dbschema)
+        if "_id" not in objschema_new["properties"]:
+            objschema_new["properties"]["_id"] = {"bsonType": "objectId"}
+        collschemas[coll_name] = objschema_new
     return collschemas
 
 
@@ -58,24 +61,45 @@ def make_compatible(objschema, dbschema):
     for p_name in property_names:
         p_spec = properties_spec[p_name]
         if p_spec.get("type") == "integer":
-            p_spec["bsonType"] = "long"
+            p_spec["bsonType"] = "int"
             p_spec.pop("type")
         if "$ref" in p_spec:
             ref = p_spec["$ref"].split("#/definitions/")[-1]
-            if ref == objschema_new.get("title"):
-                if ref not in dbschema["properties"]:
-                    # recursion within non-collection. nonsense.
+            if ref == objschema_new.get("title"): # same-type reference
+                if "id" not in properties_spec:
+                    # avoid infinite recursion
                     properties_spec.pop(p_name)
                 else:
                     # reference to other document in this collection
                     p_spec["type"] = "string"
                     p_spec.pop("$ref")
             else:
-                properties_spec[p_name] = make_compatible(
-                    dbschema["definitions"][ref], dbschema
-                )
+                if "id" not in dbschema["definitions"][ref].get("properties"):
+                    properties_spec[p_name] = make_compatible(
+                        dbschema["definitions"][ref], dbschema
+                    )
+                else:
+                    p_spec["type"] = "string"
+                    p_spec.pop("$ref")
+        if p_spec.get("type") == "array" and "$ref" in p_spec.get("items"):
+            ref = p_spec["items"]["$ref"].split("#/definitions/")[-1]
+            if ref == objschema_new.get("title"): # same-type reference
+                if "id" not in properties_spec:
+                    # avoid infinite recursion
+                    properties_spec.pop(p_name)
+                else:
+                    # reference to other document in this collection
+                    p_spec["items"]["type"] = "string"
+                    p_spec["items"].pop("$ref")
+            else:
+                if "id" not in dbschema["definitions"][ref].get("properties"):
+                    properties_spec[p_name]["items"] = make_compatible(
+                        dbschema["definitions"][ref], dbschema
+                    )
+                else:
+                    properties_spec[p_name]["items"]["type"] = "string"
+                    properties_spec[p_name]["items"].pop("$ref")
+
     if "required" in objschema_new and len(objschema_new["required"]) == 0:
         objschema_new.pop("required")
-    if "_id" not in properties_spec:
-        properties_spec["_id"] = {"bsonType": "objectId"}
     return objschema_new
