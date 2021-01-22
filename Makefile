@@ -9,4 +9,7 @@ update-deps:
 
 update: update-deps init
 
-.PHONY: update-deps init update
+publish:
+	invoke publish
+
+.PHONY: update-deps init update publish
