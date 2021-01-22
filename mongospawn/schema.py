@@ -77,5 +77,5 @@ def make_compatible(objschema, dbschema):
     if "required" in objschema_new and len(objschema_new["required"]) == 0:
         objschema_new.pop("required")
     if "_id" not in objschema_new:
-        objschema_new["_id"] = {bsonType: "objectId"}
+        objschema_new["_id"] = {"bsonType": "objectId"}
     return objschema_new
