@@ -61,7 +61,7 @@ def make_compatible(objschema, dbschema):
     for p_name in property_names:
         p_spec = properties_spec[p_name]
         if p_spec.get("type") == "integer":
-            p_spec["bsonType"] = "int"
+            p_spec["bsonType"] = ["int", "long"]
             p_spec.pop("type")
         if "$ref" in p_spec:
             ref = p_spec["$ref"].split("#/definitions/")[-1]
