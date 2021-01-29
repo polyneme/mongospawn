@@ -13,6 +13,12 @@ def dbschema_from_file(filepath) -> DBSchema:
     return dbschema
 
 
+def dbschema_from_str(json_str) -> DBSchema:
+    dbschema = json.loads(json_str)
+    check_dbschema(dbschema)
+    return dbschema
+
+
 def check_dbschema(dbschema):
     """raises an Exception if the given dbschema is invalid."""
     assert "properties" in dbschema, "No properties field in toplevel"
